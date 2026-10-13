@@ -1,9 +1,9 @@
 ---
-name: cliptate-shorts
+name: cliptate-long2shorts
 description: 使用 Cliptate CLI 转写本地或 YouTube 长视频，由 agent 选择完整亮点并用 FFmpeg 生成带字幕的竖屏短视频。用户要求基于 Cliptate 把访谈、播客或长视频转成 Shorts、Reels、抖音或视频号短片时使用。
 ---
 
-# Cliptate Shorts
+# Cliptate Long2Shorts
 
 把长视频转成可交付的短片。Cliptate 负责本地转写，当前 agent 负责选段、翻译和文案，随附的 Python 标准库脚本用 FFmpeg 渲染、校验。不依赖 pycut，不把它的 `cut` 参数套给 Cliptate。
 

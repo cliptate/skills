@@ -15,7 +15,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from common import analysis_windows, find_ffmpeg, read_json, run, transcript_record
-from render_clips import load_manifest, make_ass, render, settings, validate_clip
+from render_clips import check_destination, load_manifest, make_ass, render, settings, validate_clip
 from transcribe import transcribe
 from validate_output import validate
 
@@ -29,7 +29,7 @@ class WorkflowTests(unittest.TestCase):
             cls.ffmpeg = find_ffmpeg()
         except ValueError as error:
             raise unittest.SkipTest(str(error))
-        cls.temporary = tempfile.TemporaryDirectory(prefix="cliptate-shorts-test-")
+        cls.temporary = tempfile.TemporaryDirectory(prefix="cliptate-long2shorts-test-")
         cls.base = Path(cls.temporary.name)
         cls.source = cls.base / "source with spaces.mp4"
         run([cls.ffmpeg, "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i",
@@ -143,6 +143,12 @@ class WorkflowTests(unittest.TestCase):
         render(self.manifest)
         directory = self.work / "clips" / "part001"
         self.assertAlmostEqual(validate(directory), 32, delta=0.2)
+        metadata = read_json(directory / "clip.json")
+        self.assertEqual(metadata["generatedBy"], "cliptate-long2shorts")
+        metadata["generatedBy"] = "cliptate-shorts"
+        (directory / "clip.json").write_text(json.dumps(metadata))
+        validate(directory)
+        check_destination(directory, force=True)
         # The source turns blue at 4s. Clip frame zero must already be blue.
         frame = subprocess.run([self.ffmpeg, "-v", "error", "-i", str(directory / "video.mp4"),
             "-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "pipe:1"], check=True, capture_output=True).stdout

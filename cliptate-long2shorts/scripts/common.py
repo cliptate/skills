@@ -12,6 +12,10 @@ import tempfile
 from pathlib import Path
 
 
+GENERATOR = "cliptate-long2shorts"
+SUPPORTED_GENERATORS = {GENERATOR, "cliptate-shorts"}
+
+
 def number(value, label):
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
         raise ValueError(f"{label} must be a finite number")

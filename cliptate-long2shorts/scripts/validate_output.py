@@ -7,7 +7,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from common import probe, read_json
+from common import SUPPORTED_GENERATORS, probe, read_json
 
 
 def ass_seconds(value):
@@ -22,7 +22,7 @@ def validate(directory):
         if not path.is_file() or path.stat().st_size == 0:
             raise ValueError(f"missing or empty output: {path}")
     metadata = read_json(directory / "clip.json")
-    if metadata.get("generatedBy") != "cliptate-shorts" or metadata.get("schemaVersion") != 1:
+    if metadata.get("generatedBy") not in SUPPORTED_GENERATORS or metadata.get("schemaVersion") != 1:
         raise ValueError("unrecognized clip metadata")
     config = settings(metadata["settings"])
     duration, video, audio = probe(directory / "video.mp4")

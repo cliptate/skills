@@ -14,7 +14,7 @@ import tempfile
 import unicodedata
 from pathlib import Path
 
-from common import find_ffmpeg, number, probe, read_json, resolve, run, transcript_record
+from common import GENERATOR, SUPPORTED_GENERATORS, find_ffmpeg, number, probe, read_json, resolve, run, transcript_record
 
 
 OUTPUTS = {"video.mp4", "subtitles.ass", "summary.txt", "cover.png", "preview-start.png",
@@ -185,7 +185,7 @@ def check_destination(final, force):
     if not force:
         raise ValueError(f"output exists: {final}; use --force only to replace a generated clip")
     marker = final / "clip.json"
-    if not final.is_dir() or not marker.is_file() or read_json(marker).get("generatedBy") != "cliptate-shorts":
+    if not final.is_dir() or not marker.is_file() or read_json(marker).get("generatedBy") not in SUPPORTED_GENERATORS:
         raise ValueError(f"refusing to replace an unrecognized directory: {final}")
     if any(item.name not in OUTPUTS or not item.is_file() or item.is_symlink() for item in final.iterdir()):
         raise ValueError(f"output contains extra files or symlinks; choose a new output: {final}")
@@ -219,7 +219,7 @@ def render(path, only=None, force=False, check_only=False, ffmpeg=None):
     for number_, clip, selected, ass in checked:
         final = output / f"part{number_:03d}"
         duration = clip["end"] - clip["start"]
-        with tempfile.TemporaryDirectory(prefix=".cliptate-shorts-", dir=output) as temporary:
+        with tempfile.TemporaryDirectory(prefix=".cliptate-long2shorts-", dir=output) as temporary:
             stage = Path(temporary) / "clip"
             stage.mkdir()
             (stage / "subtitles.ass").write_text(ass, encoding="utf-8")
@@ -233,7 +233,7 @@ def render(path, only=None, force=False, check_only=False, ffmpeg=None):
                                       ("preview-middle.png", duration / 2), ("preview-end.png", max(0, duration - 1))]:
                 run([executable, "-hide_banner", "-loglevel", "error", "-nostdin", "-i", "video.mp4",
                      "-ss", str(seconds), "-frames:v", "1", filename], cwd=stage)
-            metadata = dict(generatedBy="cliptate-shorts", schemaVersion=1, source=str(source), manifest=str(path),
+            metadata = dict(generatedBy=GENERATOR, schemaVersion=1, source=str(source), manifest=str(path),
                             sourceStart=clip["start"], sourceEnd=clip["end"], timingPrecision="segment",
                             segmentIDs=[item["id"] for item in selected], settings=config, clip=clip)
             (stage / "clip.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
