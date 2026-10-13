@@ -1,0 +1,4 @@
+interface:
+  display_name: "FCPXML"
+  short_description: "构建、便携打包、校验并导入 Final Cut Pro XML"
+  default_prompt: "Use $fcpxml to inspect and validate this FCPXML, package local media when requested, and import into Final Cut Pro when requested."

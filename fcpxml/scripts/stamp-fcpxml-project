@@ -1,0 +1,138 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+import xml.etree.ElementTree as ElementTree
+from datetime import datetime
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+
+from _fcpxml_support import FCPXMLSupportError, inspect_artifact
+
+
+STAMP_PATTERN = re.compile(r"\s\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2}$")
+
+
+class ProjectStampError(Exception):
+    pass
+
+
+def emit(payload: dict[str, object]) -> None:
+    print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+
+
+def parse_timestamp(value: str | None) -> datetime:
+    if value is None:
+        return datetime.now().astimezone().replace(microsecond=0)
+    try:
+        return datetime.fromisoformat(value).replace(microsecond=0)
+    except ValueError as error:
+        raise ProjectStampError(
+            "timestamp must be ISO 8601, for example 2026-08-07T15:04:09"
+        ) from error
+
+
+def resolve_output(value: str | None, source: Path, timestamp: datetime) -> Path:
+    if value is None:
+        output = source.with_name(f"{source.stem}-{timestamp:%Y%m%d-%H%M%S}.fcpxml")
+    else:
+        output = Path(value).expanduser().resolve(strict=False)
+    if output.suffix.lower() != ".fcpxml":
+        raise ProjectStampError("output must use the .fcpxml extension")
+    if not output.parent.is_dir():
+        raise ProjectStampError(
+            f"output parent directory does not exist: {output.parent}"
+        )
+    if output.exists():
+        raise ProjectStampError(f"output already exists: {output}")
+    if output == source:
+        raise ProjectStampError("output must be separate from the source artifact")
+    return output
+
+
+def write_document(root: ElementTree.Element, output: Path) -> None:
+    ElementTree.indent(root, space="  ")
+    body = ElementTree.tostring(root, encoding="utf-8", short_empty_elements=True)
+    output.write_bytes(
+        b'<?xml version="1.0" encoding="UTF-8"?>\n'
+        b"<!DOCTYPE fcpxml>\n"
+        + body
+        + b"\n"
+    )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Create a new FCPXML document whose single Project name ends with "
+            "a local timestamp precise to seconds."
+        )
+    )
+    parser.add_argument("input", help="Generated .fcpxml file.")
+    parser.add_argument(
+        "-o",
+        "--output",
+        help=(
+            "New standalone .fcpxml output path. By default, create a sibling "
+            "whose filename carries the same second-precision timestamp."
+        ),
+    )
+    parser.add_argument(
+        "--timestamp",
+        help=(
+            "ISO 8601 timestamp override for deterministic runs; default is "
+            "the current local time."
+        ),
+    )
+    arguments = parser.parse_args()
+
+    try:
+        artifact = inspect_artifact(arguments.input)
+        if artifact.artifact_path.suffix.lower() != ".fcpxml":
+            raise ProjectStampError("input must be a generated standalone .fcpxml file")
+        timestamp = parse_timestamp(arguments.timestamp)
+        output = resolve_output(arguments.output, artifact.artifact_path, timestamp)
+        projects = artifact.root.findall(".//project")
+        if len(projects) != 1:
+            raise ProjectStampError(
+                f"expected exactly one Project, found {len(projects)}"
+            )
+        project = projects[0]
+        base_name = STAMP_PATTERN.sub("", project.get("name", "").strip())
+        if not base_name:
+            base_name = artifact.artifact_path.stem
+        project_name = f"{base_name} {timestamp:%Y-%m-%d %H-%M-%S}"
+        project.set("name", project_name)
+        write_document(artifact.root, output)
+        inspect_artifact(output)
+    except (FCPXMLSupportError, OSError, ProjectStampError) as error:
+        emit(
+            {
+                "schemaVersion": 1,
+                "command": "fcpxml.stamp-project",
+                "status": "failed",
+                "error": {"code": "project_stamp_failed", "message": str(error)},
+            }
+        )
+        return 65
+
+    emit(
+        {
+            "schemaVersion": 1,
+            "command": "fcpxml.stamp-project",
+            "status": "created",
+            "sourceArtifact": str(artifact.artifact_path),
+            "outputArtifact": str(output),
+            "projectName": project_name,
+            "timestamp": timestamp.isoformat(timespec="seconds"),
+        }
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

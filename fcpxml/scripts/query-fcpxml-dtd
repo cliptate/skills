@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+
+from _fcpxml_support import (
+    FCPXMLSupportError,
+    inspect_artifact,
+    resolve_matching_dtd,
+    validate_version,
+)
+
+
+def emit(payload: dict[str, object]) -> None:
+    print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+
+
+def declaration_pattern(kind: str, name: str) -> re.Pattern[str]:
+    return re.compile(
+        rf"<!{kind}\s+{re.escape(name)}(?=\s).*?>",
+        re.DOTALL,
+    )
+
+
+def entity_pattern(name: str) -> re.Pattern[str]:
+    return re.compile(
+        rf"<!ENTITY\s+%\s+{re.escape(name)}(?=\s).*?>",
+        re.DOTALL,
+    )
+
+
+def normalized(value: str) -> str:
+    return "\n".join(line.rstrip() for line in value.strip().splitlines())
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Query an element declaration in a version-matched FCPXML DTD."
+    )
+    selector = parser.add_mutually_exclusive_group(required=True)
+    selector.add_argument("--input", help="Input .fcpxml file or .fcpxmld bundle.")
+    selector.add_argument("--version", help="FCPXML major.minor version.")
+    parser.add_argument("--element", required=True, help="Exact FCPXML element name.")
+    parser.add_argument("--dtd", help="Explicit authoritative DTD path.")
+    arguments = parser.parse_args()
+
+    try:
+        if arguments.input is not None:
+            artifact = inspect_artifact(arguments.input)
+            version = artifact.version
+            input_details: dict[str, object] = {
+                "artifact": str(artifact.artifact_path),
+                "sourceXML": str(artifact.xml_path),
+            }
+        else:
+            version = validate_version(arguments.version)
+            input_details = {}
+
+        dtd_path, dtd_source = resolve_matching_dtd(version, arguments.dtd)
+        if dtd_path is None:
+            emit(
+                {
+                    "schemaVersion": 1,
+                    "command": "fcpxml.skill.query-dtd",
+                    "status": "unavailable",
+                    "fcpxmlVersion": version,
+                    "element": arguments.element,
+                    **input_details,
+                    "message": "No matching Final Cut Pro DTD is installed; pass --dtd.",
+                }
+            )
+            return 2
+
+        text = Path(dtd_path).read_text(encoding="utf-8")
+        element_matches = declaration_pattern("ELEMENT", arguments.element).findall(text)
+        attribute_matches = declaration_pattern("ATTLIST", arguments.element).findall(text)
+        declarations = element_matches + attribute_matches
+        if not declarations:
+            emit(
+                {
+                    "schemaVersion": 1,
+                    "command": "fcpxml.skill.query-dtd",
+                    "status": "not-found",
+                    "fcpxmlVersion": version,
+                    "element": arguments.element,
+                    **input_details,
+                    "dtd": str(dtd_path),
+                    "dtdSource": dtd_source,
+                    "message": "Element is not declared in the matching DTD.",
+                }
+            )
+            return 1
+
+        referenced_entities = sorted(
+            {
+                name
+                for declaration in declarations
+                for name in re.findall(r"%([A-Za-z0-9_.:-]+);", declaration)
+            }
+        )
+        entity_declarations = [
+            normalized(match)
+            for name in referenced_entities
+            for match in entity_pattern(name).findall(text)
+        ]
+        emit(
+            {
+                "schemaVersion": 1,
+                "command": "fcpxml.skill.query-dtd",
+                "status": "found",
+                "fcpxmlVersion": version,
+                "element": arguments.element,
+                **input_details,
+                "dtd": str(dtd_path),
+                "dtdSource": dtd_source,
+                "elementDeclarations": [normalized(value) for value in element_matches],
+                "attributeListDeclarations": [
+                    normalized(value) for value in attribute_matches
+                ],
+                "referencedEntityDeclarations": entity_declarations,
+            }
+        )
+        return 0
+    except (FCPXMLSupportError, OSError, UnicodeError) as error:
+        emit(
+            {
+                "schemaVersion": 1,
+                "command": "fcpxml.skill.query-dtd",
+                "status": "incomplete",
+                "fcpxmlVersion": getattr(arguments, "version", None),
+                "element": arguments.element,
+                "message": str(error),
+            }
+        )
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

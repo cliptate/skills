@@ -1,6 +1,6 @@
 # Cliptate Skills
 
-macOS のコマンドラインから [Cliptate](https://github.com/cliptate/cliptate) を操作するエージェントスキルです。
+[Cliptate](https://github.com/cliptate/cliptate) による文字起こし、短編動画制作、Final Cut Pro FCPXML のワークフロー向けエージェントスキルです。
 
 **言語：** [English](../README.md) · [简体中文](README.zh.md) · 日本語 · [한국어](README.ko.md) · [Deutsch](README.de.md)
 
@@ -10,10 +10,13 @@ macOS のコマンドラインから [Cliptate](https://github.com/cliptate/clip
 | --- | --- |
 | [cliptate](../cliptate/SKILL.md) | ローカル音声・動画の文字起こし、字幕出力、音声合成、認識辞書の管理、履歴と修正記録の取得 |
 | [cliptate-long2shorts](../cliptate-long2shorts/SKILL.md) | Cliptate の文字起こし、エージェントによる場面選択と翻訳、FFmpeg の描画で長い動画を縦型の短編に変換 |
+| [fcpxml](../fcpxml/SKILL.md) | FCPXML の作成・検証、メディアを含む移植可能なバンドル作成、Cliptate の文字起こしによる粗編集、Final Cut Pro への読み込み |
 
-コマンド例、JSON の処理、ページ分割、一部失敗時の処理、バージョン確認を含みます。スキルの指示は現在、簡体字中国語で記述されていますが、エージェントは他の言語の依頼にも利用できます。このリポジトリはエージェント向けの指示を提供します。Cliptate アプリは別途インストールしてください。
+コマンド例、JSON の処理、ページ分割、一部失敗時の処理、バージョン確認を含みます。スキルの指示は簡体字中国語または英語で記述されており、エージェントは他の言語の依頼にも利用できます。このリポジトリはエージェント向けの指示を提供します。Cliptate アプリは別途インストールしてください。
 
 ## 動作要件
+
+以下の Cliptate 要件は文字起こしに適用されます。`fcpxml` スクリプトには Python 3.9+、`xmllint`、完全に一致する DTD が必要です。読み込みと DTD の自動検索には Final Cut Pro が必要です。Cliptate は新しい文字起こしを生成する場合に必要です。
 
 - macOS 15 以降を搭載した Apple Silicon Mac。
 - GitHub または直接ダウンロード版の Cliptate。App Store 版には CLI サービスがありません。
@@ -39,9 +42,17 @@ npx skills add cliptate/skills --agent codex --global --skill cliptate --skill c
 
 `--global` を指定すると全プロジェクトで利用できます。省略すると現在のプロジェクトにインストールします。`cliptate` だけが必要な場合は `--skill cliptate-long2shorts` を省略してください。`cliptate-long2shorts` は文字起こしに `cliptate` を使うため、両方をインストールします。他のエージェントは対話形式で選択するか、`--agent` を対応する識別子に変更してください。
 
+FCPXML の確認・検証・パッケージ化・読み込みには `fcpxml` を単独でインストールできます：
+
+```sh
+npx skills add cliptate/skills --agent codex --global --skill fcpxml
+```
+
+粗編集で新しい文字起こしを生成する場合は `--skill cliptate` も追加し、`cliptate/` と `fcpxml/` を同じスキルディレクトリに配置します。整合済みの文字起こしがあれば Cliptate は不要です。手動ではスクリプトと参考資料を含む `fcpxml/` 全体をコピーします。
+
 ### 手動インストール
 
-このリポジトリをクローンし、必要なスキルのフォルダ `cliptate/` または `cliptate-long2shorts/` 全体を Codex の `~/.codex/skills/` にコピーします。含まれる `references/`、`agents/`、`scripts/` サブフォルダも保持してください。`cliptate` は単独で利用できます。`cliptate-long2shorts` は文字起こしに `cliptate` スキルを使うため、両方のフォルダを同じスキルディレクトリにインストールしてください。コピー先が存在する場合は、上書き前に内容を確認します。他のエージェントでは対応するスキルディレクトリを使用します。Codex では次のターンから利用できます。
+このリポジトリをクローンし、必要なスキルのフォルダ `cliptate/`、`cliptate-long2shorts/`、`fcpxml/` 全体を Codex の `~/.codex/skills/` にコピーします。含まれる `references/`、`agents/`、`scripts/` サブフォルダも保持してください。`cliptate` は単独で利用できます。`cliptate-long2shorts` は文字起こしに `cliptate` スキルを使うため、両方のフォルダを同じスキルディレクトリにインストールしてください。コピー先が存在する場合は、上書き前に内容を確認します。他のエージェントでは対応するスキルディレクトリを使用します。Codex では次のターンから利用できます。
 
 Cliptate の「**設定 → コマンドライン**」で表示されるインストールコマンドを使い、helper を `~/.local/bin` にリンクします。このディレクトリを PATH に含めるか、アプリ内の helper を直接実行します。実際のコマンドを確認してください。
 
@@ -57,6 +68,7 @@ $cliptate を使って interview.mp4 を文字起こしし、interview.srt に�
 $cliptate を使って narration.txt から narration.wav を生成してください。
 $cliptate を使って最近の修正履歴を分析し、信頼できる新しい用語を辞書に追加してください。
 $cliptate-long2shorts を使って interview.mp4 から 30–90 秒の縦型動画を 3 本作り、中英字幕を付けてください。まず 1 本目をプレビューしてください。
+$fcpxml を使い、Cliptate の文字起こしで interview.fcpxmld を粗編集し、検証済みの移植可能なバンドルを作成してください。
 ```
 
 公開 CLI は SRT/VTT 字幕ファイルを出力します。動画編集や字幕の焼き込みには対応していません。選択したアプリの設定を使用します。文字起こしと音声合成は履歴に追加されませんが、辞書の変更は保存されます。
@@ -70,5 +82,6 @@ $cliptate-long2shorts を使って interview.mp4 から 30–90 秒の縦型動�
 - [音声合成](../cliptate/references/tts.md)：テキスト入力、モデル種別、音声設計・クローン、WAV 出力。
 - [辞書と履歴](../cliptate/references/dictionary-history.md)：用語管理、履歴のページ分割、修正記録からの学習。
 - [短編動画のワークフロー](../cliptate-long2shorts/SKILL.md)、[実行環境](../cliptate-long2shorts/references/runtime.md)、[描画マニフェスト](../cliptate-long2shorts/references/manifest.md)。
+- [FCPXML ワークフロー](../fcpxml/SKILL.md)、[Cliptate による粗編集](../fcpxml/references/rough-cut.md)、[検証](../fcpxml/references/validation.md)、[移植可能なパッケージ](../fcpxml/references/portability.md)。
 
 メンテナンス時は実際の helper のヘルプを[上流の CLI ガイド](https://github.com/cliptate/cliptate/blob/main/docs/cli.md)および引数パーサーと照合してください。現在のソースにある機能が、インストール済みのアプリにはまだ含まれていない場合があります。
