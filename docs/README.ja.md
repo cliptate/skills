@@ -1,0 +1,50 @@
+# Cliptate Skills
+
+macOS のコマンドラインから [Cliptate](https://github.com/cliptate/cliptate) を操作するエージェントスキルです。
+
+**言語：** [English](../README.md) · [简体中文](README.zh.md) · 日本語 · [한국어](README.ko.md) · [Deutsch](README.de.md)
+
+## 利用できるスキル
+
+| スキル | 機能 |
+| --- | --- |
+| [cliptate](../cliptate/SKILL.md) | ローカル音声・動画の文字起こし、字幕出力、音声合成、認識辞書の管理、履歴と修正記録の取得 |
+
+コマンド例、JSON の処理、ページ分割、一部失敗時の処理、バージョン確認を含みます。スキルの指示は現在、簡体字中国語で記述されていますが、エージェントは他の言語の依頼にも利用できます。このリポジトリはエージェント向けの指示を提供します。Cliptate アプリは別途インストールしてください。
+
+## 動作要件
+
+- macOS 15 以降を搭載した Apple Silicon Mac。
+- GitHub または直接ダウンロード版の Cliptate。App Store 版には CLI サービスがありません。
+- 必要なコマンドが `cliptate --help` に表示される CLI バージョン。古い版には `tts` や `history` がない場合があります。
+- 必要なモデルをダウンロード済みであること。モデルのダウンロードが必要な場合は `--download` を使用します。
+
+## インストールと使い方
+
+このリポジトリをクローンし、`cliptate/` フォルダ全体を Codex の `~/.codex/skills/cliptate/` にコピーします。`references/` と `agents/` サブフォルダも保持してください。コピー先が存在する場合は、上書き前に内容を確認します。他のエージェントでは対応するスキルディレクトリを使用します。Codex では次のターンから利用できます。
+
+Cliptate の「**設定 → コマンドライン**」で表示されるインストールコマンドを使い、helper を `~/.local/bin` にリンクします。このディレクトリを PATH に含めるか、アプリ内の helper を直接実行します。実際のコマンドを確認してください。
+
+```sh
+cliptate --version
+cliptate --help
+```
+
+依頼の例：
+
+```text
+$cliptate を使って interview.mp4 を文字起こしし、interview.srt に保存してください。
+$cliptate を使って narration.txt から narration.wav を生成してください。
+$cliptate を使って最近の修正履歴を分析し、信頼できる新しい用語を辞書に追加してください。
+```
+
+公開 CLI は SRT/VTT 字幕ファイルを出力します。動画編集や字幕の焼き込みには対応していません。選択したアプリの設定を使用します。文字起こしと音声合成は履歴に追加されませんが、辞書の変更は保存されます。
+
+## 参考資料
+
+- [スキルの入口](../cliptate/SKILL.md)：CLI の確認、処理の選択、結果の判定。
+- [文字起こしと字幕](../cliptate/references/transcription.md)：入力、形式、出力先、バッチ JSON。
+- [音声合成](../cliptate/references/tts.md)：テキスト入力、モデル種別、音声設計・クローン、WAV 出力。
+- [辞書と履歴](../cliptate/references/dictionary-history.md)：用語管理、履歴のページ分割、修正記録からの学習。
+
+メンテナンス時は実際の helper のヘルプを[上流の CLI ガイド](https://github.com/cliptate/cliptate/blob/main/docs/cli.md)および引数パーサーと照合してください。現在のソースにある機能が、インストール済みのアプリにはまだ含まれていない場合があります。

@@ -1,0 +1,3 @@
+interface:
+  display_name: "Cliptate CLI"
+  short_description: "通过 Cliptate CLI 转写音视频、导出字幕、合成语音并管理词典与历史"
