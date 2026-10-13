@@ -23,6 +23,24 @@
 
 ## 安装与使用
 
+### 使用 npx 安装
+
+安装 Node.js 和 npm 后，可以通过 [skills CLI](https://github.com/vercel-labs/skills) 交互选择技能和目标 agent：
+
+```sh
+npx skills add cliptate/skills
+```
+
+为 Codex 全局安装两个技能：
+
+```sh
+npx skills add cliptate/skills --agent codex --global --skill cliptate --skill cliptate-long2shorts
+```
+
+`--global` 让技能可在所有项目中使用；省略该参数则安装到当前项目。只需要 `cliptate` 时，去掉 `--skill cliptate-long2shorts`。使用 `cliptate-long2shorts` 时需同时安装两个技能，因为它依赖 `cliptate` 转写。其他 agent 可通过交互选择，或将 `--agent` 改为对应的受支持标识。
+
+### 手动安装
+
 克隆本仓库，把需要的完整技能文件夹 `cliptate/` 或 `cliptate-long2shorts/` 复制到 Codex 的 `~/.codex/skills/`，保留其中所有 `references/`、`agents/`、`scripts/` 子目录。`cliptate` 可独立使用；`cliptate-long2shorts` 复用 `cliptate` skill 转写，需要将两个文件夹安装到同一技能目录。如果目标已存在，先检查内容再决定是否替换。其他 agent 使用各自支持的技能目录。Codex 会在下一轮对话中发现技能。
 
 在 Cliptate 中打开「**设置 → 命令行**」，使用面板提供的安装命令，将 helper 链接到 `~/.local/bin`。确保该目录位于 PATH，或直接调用应用包内的 helper。检查实际命令：

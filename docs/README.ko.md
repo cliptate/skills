@@ -23,6 +23,24 @@ macOS 명령줄에서 [Cliptate](https://github.com/cliptate/cliptate)를 사용
 
 ## 설치 및 사용
 
+### npx로 설치
+
+Node.js와 npm을 설치한 후 [skills CLI](https://github.com/vercel-labs/skills)에서 스킬과 대상 에이전트를 대화형으로 선택할 수 있습니다.
+
+```sh
+npx skills add cliptate/skills
+```
+
+Codex용으로 두 스킬을 전역 설치하려면:
+
+```sh
+npx skills add cliptate/skills --agent codex --global --skill cliptate --skill cliptate-long2shorts
+```
+
+`--global`을 지정하면 모든 프로젝트에서 사용할 수 있으며, 생략하면 현재 프로젝트에 설치합니다. `cliptate`만 필요하면 `--skill cliptate-long2shorts`를 제외하세요. `cliptate-long2shorts`는 전사에 `cliptate`를 사용하므로 두 스킬을 함께 설치해야 합니다. 다른 에이전트는 대화형으로 선택하거나 `--agent`를 해당 에이전트의 지원 식별자로 변경하세요.
+
+### 수동 설치
+
 이 저장소를 복제한 후 필요한 스킬의 `cliptate/` 또는 `cliptate-long2shorts/` 폴더 전체를 Codex의 `~/.codex/skills/`로 복사합니다. 포함된 `references/`, `agents/`, `scripts/` 하위 폴더도 유지하세요. `cliptate`는 단독으로 사용할 수 있습니다. `cliptate-long2shorts`는 전사에 `cliptate` 스킬을 사용하므로 두 폴더를 같은 스킬 디렉터리에 설치하세요. 대상 폴더가 이미 있다면 교체하기 전에 내용을 확인합니다. 다른 에이전트에서는 해당 에이전트가 지원하는 스킬 디렉터리를 사용합니다. Codex에서는 다음 대화 턴부터 사용할 수 있습니다.
 
 Cliptate의 **설정 → 명령줄**에서 제공하는 설치 명령으로 helper를 `~/.local/bin`에 연결합니다. 이 디렉터리가 PATH에 포함되어 있는지 확인하거나 앱 번들 안의 helper를 직접 실행합니다. 실제 명령을 확인하세요.

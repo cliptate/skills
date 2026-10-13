@@ -23,6 +23,24 @@ Der Skill enthält Befehlsbeispiele sowie Hinweise zu JSON, Seitennavigation, Te
 
 ## Installation und Nutzung
 
+### Mit npx installieren
+
+Mit installiertem Node.js und npm lassen sich Skills und Zielagenten über die [skills CLI](https://github.com/vercel-labs/skills) interaktiv auswählen:
+
+```sh
+npx skills add cliptate/skills
+```
+
+Beide Skills global für Codex installieren:
+
+```sh
+npx skills add cliptate/skills --agent codex --global --skill cliptate --skill cliptate-long2shorts
+```
+
+Mit `--global` sind die Skills in allen Projekten verfügbar; ohne diese Option werden sie im aktuellen Projekt installiert. Für `cliptate` allein `--skill cliptate-long2shorts` weglassen. Für `cliptate-long2shorts` beide Skills installieren, da es `cliptate` zur Transkription nutzt. Andere Agenten interaktiv auswählen oder `--agent` auf deren unterstützte Kennung ändern.
+
+### Manuelle Installation
+
 Dieses Repository klonen und den vollständigen Ordner jedes gewünschten Skills, `cliptate/` oder `cliptate-long2shorts/`, für Codex nach `~/.codex/skills/` kopieren. Alle enthaltenen Unterordner `references/`, `agents/` und `scripts/` beibehalten. `cliptate` kann eigenständig verwendet werden. `cliptate-long2shorts` nutzt den Skill `cliptate` für die Transkription; dafür beide Ordner im selben Skill-Verzeichnis installieren. Falls das Ziel bereits existiert, vor dem Ersetzen seinen Inhalt prüfen. Für andere Agenten das jeweils unterstützte Skill-Verzeichnis verwenden. Codex kann die Skills ab dem nächsten Gesprächsschritt nutzen.
 
 In Cliptate unter **Einstellungen → Kommandozeile** den angezeigten Installationsbefehl verwenden, um den Helper in `~/.local/bin` zu verknüpfen. Dieses Verzeichnis muss im PATH stehen; alternativ den Helper direkt aus dem App-Bundle aufrufen. Den tatsächlichen Befehl prüfen:

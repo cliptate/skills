@@ -23,6 +23,24 @@ The skill includes command examples, JSON handling, pagination, partial failures
 
 ## Install and use
 
+### Install with npx
+
+With Node.js and npm installed, use the [skills CLI](https://github.com/vercel-labs/skills) to select skills and target agents interactively:
+
+```sh
+npx skills add cliptate/skills
+```
+
+To install both skills globally for Codex:
+
+```sh
+npx skills add cliptate/skills --agent codex --global --skill cliptate --skill cliptate-long2shorts
+```
+
+`--global` makes the skills available across projects; omit it for installation in the current project. To install only `cliptate`, omit `--skill cliptate-long2shorts`. For `cliptate-long2shorts`, install both skills because it uses `cliptate` for transcription. For other agents, select them interactively or change `--agent` to their supported identifier.
+
+### Manual installation
+
 Clone this repository and copy the entire folder for each desired skill into `~/.codex/skills/` for Codex: `cliptate/` or `cliptate-long2shorts/`. Keep all included `references/`, `agents/`, and `scripts/` subfolders together. `cliptate` works on its own. For `cliptate-long2shorts`, install both folders side by side: it reuses the `cliptate` skill for transcription. If the destination already exists, inspect it before replacing it. For other agents, use their supported skill directory. Skills will be available to Codex on the next turn.
 
 In Cliptate, open **Settings → Command Line** and use the installation command to add the helper to `~/.local/bin`. Ensure that directory is in PATH, or invoke the helper directly inside the app bundle. Check the installed command:
