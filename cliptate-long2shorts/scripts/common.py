@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import json
 import math
-import os
 import re
 import shutil
 import subprocess
-import tempfile
 from pathlib import Path
 
 
@@ -101,28 +99,3 @@ def transcript_record(payload, source):
         if not isinstance(segment.get("text"), str) or not segment["text"].strip():
             raise ValueError("segment text must be non-empty")
     return record
-
-
-def analysis_windows(record, seconds=300):
-    segments = record["segments"]
-    end = max(item["end"] for item in segments)
-    return [{
-        "start": offset, "end": min(offset + seconds, end),
-        "segments": [item for item in segments if item["end"] > offset and item["start"] < offset + seconds],
-    } for offset in range(0, math.ceil(end), seconds)]
-
-
-def write_json(path, payload, force=False):
-    """Publish only complete JSON; link prevents races from overwriting an existing file."""
-    data = (json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as handle:
-        temporary = Path(handle.name)
-        handle.write(data)
-    try:
-        if force:
-            os.replace(temporary, path)
-        else:
-            os.link(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)

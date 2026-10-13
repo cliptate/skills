@@ -5,7 +5,9 @@ description: 使用 Cliptate CLI 转写本地或 YouTube 长视频，由 agent �
 
 # Cliptate Long2Shorts
 
-把长视频转成可交付的短片。Cliptate 负责本地转写，当前 agent 负责选段、翻译和文案，随附的 Python 标准库脚本用 FFmpeg 渲染、校验。不依赖 pycut，不把它的 `cut` 参数套给 Cliptate。
+把长视频转成可交付的短片。转写复用 [cliptate skill](../cliptate/SKILL.md)，当前 agent 负责选段、翻译和文案，随附的 Python 标准库脚本用 FFmpeg 渲染、校验。
+
+安装时将 `cliptate/` 与 `cliptate-long2shorts/` 放在同一技能目录下。需要转写时加载 `cliptate` skill；已有符合下述接口的转写时可直接进入选段。
 
 ## 默认交付
 
@@ -18,25 +20,17 @@ description: 使用 Cliptate CLI 转写本地或 YouTube 长视频，由 agent �
 
 ## 1. 确认输入和运行环境
 
-读取 [运行环境与素材](references/runtime.md)，确认直装版 Cliptate、实际 helper 的 `--help`、Python 3.9+、ffprobe、带 libass 的 FFmpeg 和字体。用户只给 YouTube 链接时使用 yt-dlp 下载本地素材；已经提供本地视频时直接使用。模型和输出放在项目之外的合适目录，不进入技能仓库。
+读取 [运行环境与素材](references/runtime.md)，确认 Python 3.9+、ffprobe、带 libass 的 FFmpeg 和字体。用户只给 YouTube 链接时使用 yt-dlp 下载本地素材；已经提供本地视频时直接使用。模型和输出放在项目之外的合适目录，不进入技能仓库。
 
 明确来源语言、输出位置及用户给出的限制。缺少可选偏好时采用上述默认值，告知关键假设即可。创建新项目目录以避免覆盖已有素材。
 
-## 2. 用 Cliptate 转写一次
+## 2. 复用 cliptate skill 获取转写
 
-`SKILL_DIR` 指此 SKILL.md 所在文件夹，`SOURCE_VIDEO` 指绝对来源路径，`PROJECT_DIR` 指项目目录。脚本运行前将这些变量设为实际路径：
+需要生成转写时，读取 [cliptate skill](../cliptate/SKILL.md) 及其 [转写说明](../cliptate/references/transcription.md)，按该技能完成 CLI 检查、模型选择和 JSON 转写。安装、调用参数、模型下载与错误处理均以该技能为准。
 
-```sh
-python3 "$SKILL_DIR/scripts/transcribe.py" "$SOURCE_VIDEO" \
-  --output "$PROJECT_DIR/transcript.json" --check-only
+将单个来源的原始 `{files:[...]}` JSON 保存为项目目录中的 `transcript.json`。交给渲染器的结果必须无错误、包含非空段落，且 `files[0].file` 与来源视频的绝对路径一致；保留原始段落 ID、文字及来源时间。
 
-python3 "$SKILL_DIR/scripts/transcribe.py" "$SOURCE_VIDEO" \
-  --output "$PROJECT_DIR/transcript.json" --language en
-```
-
-默认使用应用 ASR 模型、VAD、分段和对齐设置；按需要传入 `--model`、`--language`、`--cli`、`--app`。模型下载通过显式 `--download` 允许，不另行下载 Qwen/Python 权重。`--check-only` 不启动推理，也不能证明模型已经可用。
-
-脚本保存 Cliptate 原始 `{files:[...]}` JSON 和 `transcript.windows.json`。复用已有转写时用 `--reuse`，修改模型/语言时重新转写。失败不会发布新的转写文件；进度在 stderr。CLI 转写不新增应用历史记录。
+只有来源内容和转写设置均未变时才复用已有转写；替换素材或改变转写设置后重新调用 `cliptate` skill。无需额外生成分析窗口文件，直接按 `[0,300)`、`[300,600)` 等时间窗口阅读 JSON，包含与窗口相交的完整段落及邻近上下文，跨窗口按 ID 去重。
 
 **时间精度：** 公开 CLI 的 JSON 只有段落 `id/text/start/end`，没有词级时间戳；即使应用开启了对齐，也不能把输出宣称为逐词时间轴。保留来源绝对时间和原始段落 ID，优先把切点放在完整段落外的停顿。先听看候选的开头和结尾，确认没有切掉词语或必要语境。
 
@@ -50,7 +44,7 @@ python3 "$SKILL_DIR/scripts/transcribe.py" "$SOURCE_VIDEO" \
 
 ## 4. 清单驱动渲染
 
-读取 [渲染清单](references/manifest.md)，按真实段落 ID 写 `render_manifest.json`。所有相对路径从清单所在目录解析。只预览第一段的请求使用 `--only 1`，不要继续渲染其他段：
+读取 [渲染清单](references/manifest.md)，按真实段落 ID 写 `render_manifest.json`。下列命令中的 `SKILL_DIR` 为本 SKILL.md 所在文件夹，`PROJECT_DIR` 为项目目录；运行前设为实际绝对路径。所有相对路径从清单所在目录解析。只预览第一段的请求使用 `--only 1`，不要继续渲染其他段：
 
 ```sh
 python3 "$SKILL_DIR/scripts/render_clips.py" "$PROJECT_DIR/render_manifest.json" --check-only

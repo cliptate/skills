@@ -23,7 +23,7 @@ Der Skill enthält Befehlsbeispiele sowie Hinweise zu JSON, Seitennavigation, Te
 
 ## Installation und Nutzung
 
-Dieses Repository klonen und den vollständigen Ordner jedes gewünschten Skills, `cliptate/` oder `cliptate-long2shorts/`, für Codex nach `~/.codex/skills/` kopieren. Alle enthaltenen Unterordner `references/`, `agents/` und `scripts/` beibehalten. Jeder Skill lässt sich unabhängig installieren. Falls das Ziel bereits existiert, vor dem Ersetzen seinen Inhalt prüfen. Für andere Agenten das jeweils unterstützte Skill-Verzeichnis verwenden. Codex kann die Skills ab dem nächsten Gesprächsschritt nutzen.
+Dieses Repository klonen und den vollständigen Ordner jedes gewünschten Skills, `cliptate/` oder `cliptate-long2shorts/`, für Codex nach `~/.codex/skills/` kopieren. Alle enthaltenen Unterordner `references/`, `agents/` und `scripts/` beibehalten. `cliptate` kann eigenständig verwendet werden. `cliptate-long2shorts` nutzt den Skill `cliptate` für die Transkription; dafür beide Ordner im selben Skill-Verzeichnis installieren. Falls das Ziel bereits existiert, vor dem Ersetzen seinen Inhalt prüfen. Für andere Agenten das jeweils unterstützte Skill-Verzeichnis verwenden. Codex kann die Skills ab dem nächsten Gesprächsschritt nutzen.
 
 In Cliptate unter **Einstellungen → Kommandozeile** den angezeigten Installationsbefehl verwenden, um den Helper in `~/.local/bin` zu verknüpfen. Dieses Verzeichnis muss im PATH stehen; alternativ den Helper direkt aus dem App-Bundle aufrufen. Den tatsächlichen Befehl prüfen:
 

@@ -3,20 +3,17 @@
 
 from __future__ import annotations
 
-import argparse
 import copy
 import json
 import shutil
 import subprocess
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from common import analysis_windows, find_ffmpeg, read_json, run, transcript_record
-from render_clips import check_destination, load_manifest, make_ass, render, settings, validate_clip
-from transcribe import transcribe
+from common import find_ffmpeg, read_json, run, transcript_record
+from render_clips import check_destination, make_ass, render, settings, validate_clip
 from validate_output import validate
 
 
@@ -60,22 +57,6 @@ class WorkflowTests(unittest.TestCase):
         self.manifest.write_text(json.dumps(dict(source=str(self.source), transcript="transcript.json",
             output="clips", settings=dict(width=360, height=640, fps=10), clips=[self.clip])))
 
-    def args(self, **kwargs):
-        values = dict(source=self.source, output=self.work / "new.json", cli="cliptate",
-                      app=None, model=None, language=None, download=False, force=False,
-                      reuse=False, check_only=False)
-        values.update(kwargs)
-        return argparse.Namespace(**values)
-
-    def fake_cli(self, failed=False):
-        path = self.work / "fake cliptate"
-        payload = json.dumps(self.payload)
-        path.write_text(f"#!{sys.executable}\nimport sys\n"
-                        "if '--help' in sys.argv:\n print('cliptate transcribe --format json')\n"
-                        f"else:\n print('progress', file=sys.stderr)\n print({payload!r})\n sys.exit({1 if failed else 0})\n")
-        path.chmod(0o700)
-        return str(path)
-
     def test_rejects_wrong_source_duplicate_ids_and_nonfinite_times(self):
         for change in ("source", "id", "nan"):
             payload = copy.deepcopy(self.payload)
@@ -87,11 +68,6 @@ class WorkflowTests(unittest.TestCase):
                 payload["files"][0]["segments"][0]["end"] = float("nan")
             with self.subTest(change=change), self.assertRaises(ValueError):
                 transcript_record(payload, self.source)
-
-    def test_windows_preserve_boundary_segment_ids(self):
-        record = dict(segments=[dict(id="crossing", start=299.5, end=301, text="One thought.")])
-        windows = analysis_windows(record)
-        self.assertEqual([window["segments"][0]["id"] for window in windows], ["crossing", "crossing"])
 
     def test_rejects_partial_segment_or_wrong_translation_mapping(self):
         for override in (dict(start=5), dict(translations={"a": "你好。"}), dict(end=100), dict(start=float("nan"))):
@@ -118,26 +94,13 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn(",Translation,,", content)
         self.assertIn("（观点）＼提示", content)
 
-    def test_transcribe_separates_progress_and_publishes_raw_shape(self):
-        args = self.args(cli=self.fake_cli())
-        transcribe(args)
-        self.assertEqual(read_json(args.output), self.payload)
-        windows = read_json(args.output.with_name("new.windows.json"))
-        self.assertEqual(windows[0]["segments"][0]["id"], "a")
-
-    def test_failed_transcribe_preserves_old_output(self):
-        output = self.work / "old.json"
-        output.write_text("previous transcript")
-        with self.assertRaises(ValueError):
-            transcribe(self.args(cli=self.fake_cli(failed=True), output=output, force=True))
-        self.assertEqual(output.read_text(), "previous transcript")
-
-    def test_check_only_is_read_only_and_reuse_never_calls_app(self):
+    def test_check_only_is_read_only(self):
+        inputs = [self.source, self.transcript, self.manifest]
+        previous = {path: path.read_bytes() for path in inputs}
         render(self.manifest, check_only=True)
         self.assertFalse((self.work / "clips").exists())
-        transcribe(self.args(output=self.transcript, reuse=True))
-        self.assertTrue((self.work / "transcript.windows.json").is_file())
-        self.assertFalse((self.work / "new.json").exists())
+        for path in inputs:
+            self.assertEqual(path.read_bytes(), previous[path])
 
     def test_render_real_video_precise_seek_and_protected_replacement(self):
         render(self.manifest)

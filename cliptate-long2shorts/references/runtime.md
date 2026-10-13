@@ -2,21 +2,14 @@
 
 ## 本地依赖
 
-需要 Apple Silicon Mac、macOS 15+ 和 GitHub/直接下载版 Cliptate；App Store 版不提供 CLI 服务。Python 脚本需要 3.9+，只用标准库。
+转写的应用与 CLI 环境由 [cliptate skill](../../cliptate/SKILL.md) 管理；需要生成转写时读取其 [转写说明](../../cliptate/references/transcription.md)。本技能的渲染脚本需要 Python 3.9+，只用标准库，另外需要 ffprobe、带 libass 的 FFmpeg 和字幕字体。
 
 ```sh
-command -v cliptate
-cliptate --version
-cliptate --help
 python3 --version
 ffprobe -version
 ffmpeg -hide_banner -filters
 fc-match -f '%{family}\n%{file}\n' 'Noto Sans CJK SC'
 ```
-
-只要求 `transcribe` 功能，不要求 TTS/history。如果 PATH 的 CLI 旧或指向另一应用，指定 `--cli "/path/to/Cliptate.app/Contents/Helpers/cliptate"`。`--app` 选择连接应用，但不更换正在执行的 CLI；开发应用与生产应用数据独立。
-
-转写默认共享应用当前设置。`--model` 使用 ASR 原始模型 ID，如 `qwen3-asr-0.6b-8bit`，不是模型路径或显示名。`--language` 用应用语言代码，如 `en`、`zh`、`auto`；模型必须支持该语言，Whisper 需明确语言。模型缺失会报错，需要下载时添加 `--download`。CLI 没有 `--max-chars`、`--segment-duration` 或 `--aligner-model` 选项；分段/对齐由应用设置管理。
 
 渲染器检测 PATH 中的 FFmpeg 及 Homebrew 的稳定 `opt/ffmpeg-full/bin/ffmpeg` 路径，选择具备 libass `ass` 滤镜的版本。也可以用 `render_clips.py --ffmpeg /absolute/path/to/ffmpeg`。优先检查现有安装，缺少依赖时再按当前环境安装，避免硬编码 Cellar 版本。
 
@@ -25,6 +18,8 @@ fc-match -f '%{family}\n%{file}\n' 'Noto Sans CJK SC'
 ## 素材与目录
 
 本地来源优先。YouTube 来源用 yt-dlp 下载最高 1080p，保留源 URL 和视频 ID；输出目录由用户选择，未指定时创建带时间戳的独立项目目录。
+
+下列命令中的 `PROJECT_DIR` 为项目目录的绝对路径，`YOUTUBE_URL` 为用户提供的视频链接；运行前设为实际值。
 
 ```sh
 mkdir -p "$PROJECT_DIR/source"
@@ -43,7 +38,6 @@ yt-dlp --no-playlist \
 project/
 ├── source/video.mp4
 ├── transcript.json
-├── transcript.windows.json
 ├── render_manifest.json
 └── clips/part001/
     ├── video.mp4
@@ -56,4 +50,4 @@ project/
     └── clip.json
 ```
 
-`transcribe.py --reuse` 校验来源路径匹配并重建分析窗口，不启动 Cliptate；文件在同一路径被替换时，这个检查无法证明内容没有变。只有来源内容和转写设置均未变时才复用；替换素材后重新转写。转写或渲染中断后先检查已经发布的文件，不盲目重复整条流水线。
+渲染器会校验转写的来源路径；文件在同一路径被替换时，路径检查无法证明内容没有变。复用转写前确认来源内容和转写设置均未变。转写或渲染中断后先检查已经发布的文件，不盲目重复整条流水线。

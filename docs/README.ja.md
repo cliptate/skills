@@ -23,7 +23,7 @@ macOS のコマンドラインから [Cliptate](https://github.com/cliptate/clip
 
 ## インストールと使い方
 
-このリポジトリをクローンし、必要なスキルのフォルダ `cliptate/` または `cliptate-long2shorts/` 全体を Codex の `~/.codex/skills/` にコピーします。含まれる `references/`、`agents/`、`scripts/` サブフォルダも保持してください。各スキルは個別にインストールできます。コピー先が存在する場合は、上書き前に内容を確認します。他のエージェントでは対応するスキルディレクトリを使用します。Codex では次のターンから利用できます。
+このリポジトリをクローンし、必要なスキルのフォルダ `cliptate/` または `cliptate-long2shorts/` 全体を Codex の `~/.codex/skills/` にコピーします。含まれる `references/`、`agents/`、`scripts/` サブフォルダも保持してください。`cliptate` は単独で利用できます。`cliptate-long2shorts` は文字起こしに `cliptate` スキルを使うため、両方のフォルダを同じスキルディレクトリにインストールしてください。コピー先が存在する場合は、上書き前に内容を確認します。他のエージェントでは対応するスキルディレクトリを使用します。Codex では次のターンから利用できます。
 
 Cliptate の「**設定 → コマンドライン**」で表示されるインストールコマンドを使い、helper を `~/.local/bin` にリンクします。このディレクトリを PATH に含めるか、アプリ内の helper を直接実行します。実際のコマンドを確認してください。
 

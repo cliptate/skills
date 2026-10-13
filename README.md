@@ -23,7 +23,7 @@ The skill includes command examples, JSON handling, pagination, partial failures
 
 ## Install and use
 
-Clone this repository and copy the entire folder for each desired skill into `~/.codex/skills/` for Codex: `cliptate/` or `cliptate-long2shorts/`. Keep all included `references/`, `agents/`, and `scripts/` subfolders together. Each skill can be installed independently. If the destination already exists, inspect it before replacing it. For other agents, use their supported skill directory. Skills will be available to Codex on the next turn.
+Clone this repository and copy the entire folder for each desired skill into `~/.codex/skills/` for Codex: `cliptate/` or `cliptate-long2shorts/`. Keep all included `references/`, `agents/`, and `scripts/` subfolders together. `cliptate` works on its own. For `cliptate-long2shorts`, install both folders side by side: it reuses the `cliptate` skill for transcription. If the destination already exists, inspect it before replacing it. For other agents, use their supported skill directory. Skills will be available to Codex on the next turn.
 
 In Cliptate, open **Settings → Command Line** and use the installation command to add the helper to `~/.local/bin`. Ensure that directory is in PATH, or invoke the helper directly inside the app bundle. Check the installed command:
 
